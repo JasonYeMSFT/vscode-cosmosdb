@@ -17,6 +17,7 @@ import { createPostgresDatabase } from "./createPostgresDatabase";
 import { createPostgresFunctionQuery } from "./createPostgresQuery/function/createPostgresFunctionQuery";
 import { createPostgresStoredProcedureQuery } from "./createPostgresQuery/storedProcedure/createPostgresStoredProcedureQuery";
 import { deletePostgresDatabase } from "./deletePostgresDatabase";
+import { deletePostgresDatabaseCredentials } from "./deletePostgresDatabaseConnection";
 import { deletePostgresFunction } from "./deletePostgresFunction";
 import { deletePostgresServer } from "./deletePostgresServer";
 import { deletePostgresStoredProcedure } from "./deletePostgresStoredProcedure";
@@ -46,6 +47,7 @@ export function registerPostgresCommands(): void {
     registerCommandWithTreeNodeUnwrapping('postgreSQL.deleteFunction', deletePostgresFunction);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.deleteStoredProcedure', deletePostgresStoredProcedure);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.connectDatabase', connectPostgresDatabase);
+    registerCommandWithTreeNodeUnwrapping('postgreSQL.deleteDatabaseCredentials', deletePostgresDatabaseCredentials);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.createFunctionQuery', createPostgresFunctionQuery);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.createStoredProcedureQuery', createPostgresStoredProcedureQuery);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.executeQuery', executePostgresQuery);
