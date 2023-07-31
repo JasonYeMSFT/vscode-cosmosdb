@@ -79,6 +79,7 @@
         "onCommand:postgreSQL.createFunctionQuery",
         "onCommand:postgreSQL.createStoredProcedureQuery",
         "onCommand:postgreSQL.deleteDatabase",
+        "onCommand:postgreSQL.deleteDatabaseCredentials",
         "onCommand:postgreSQL.deleteFunction",
         "onCommand:postgreSQL.deleteServer",
         "onCommand:postgreSQL.deleteStoredProcedure",
@@ -397,6 +398,11 @@
             },
             {
                 "category": "PostgreSQL",
+                "command": "postgreSQL.deleteDatabaseCredentials",
+                "title": "Delete Database Credentials..."
+            },
+            {
+                "category": "PostgreSQL",
                 "command": "postgreSQL.deleteFunction",
                 "title": "Delete Function..."
             },
@@ -687,6 +693,11 @@
                 {
                     "command": "postgreSQL.deleteDatabase",
                     "when": "view =~ /azure(ResourceGroups|Workspace|FocusView)/ && viewItem == postgresDatabase",
+                    "group": "1@2"
+                },
+                {
+                    "command": "postgreSQL.deleteDatabaseCredentials",
+                    "when": "view =~ /azure(ResourceGroups|Workspace|FocusView)/ && viewItem =~ /postgresServer(?![a-z])/i",
                     "group": "1@2"
                 },
                 {
