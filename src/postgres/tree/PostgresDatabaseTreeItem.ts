@@ -8,6 +8,7 @@ import { FirewallRule } from '@azure/arm-postgresql';
 import { uiUtils } from '@microsoft/vscode-azext-azureutils';
 import { AzExtParentTreeItem, AzExtTreeItem, GenericTreeItem, IActionContext, IParsedError, parseError, TreeItemIconPath } from '@microsoft/vscode-azext-utils';
 import { ClientConfig } from 'pg';
+import * as vscode from 'vscode';
 import { ThemeIcon } from 'vscode';
 import { postgresDefaultDatabase } from '../../constants';
 import { ext } from '../../extensionVariables';
@@ -61,7 +62,7 @@ export class PostgresDatabaseTreeItem extends AzExtParentTreeItem {
 
     public async loadMoreChildrenImpl(_clearCache: boolean, context: IActionContext): Promise<AzExtTreeItem[]> {
         try {
-            const clientConfig: ClientConfig = await getClientConfig(this.parent, this.databaseName);
+            const clientConfig: ClientConfig & { usePassword: boolean } = await getClientConfig(this.parent, this.databaseName);
             const children: AzExtTreeItem[] = [
                 new PostgresFunctionsTreeItem(this, clientConfig),
                 new PostgresTablesTreeItem(this, clientConfig)
@@ -69,6 +70,22 @@ export class PostgresDatabaseTreeItem extends AzExtParentTreeItem {
 
             if (await this.parent.supportsStoredProcedures(clientConfig)) {
                 children.push(new PostgresStoredProceduresTreeItem(this, clientConfig));
+            }
+
+            const usePassword = clientConfig.usePassword;
+            if (usePassword) {
+                const dismissWarningFlagKey = 'postgresql.dismissPasswordWarning';
+                ext.context.globalState.update(dismissWarningFlagKey, false);
+                const shouldDismissWarning = ext.context.globalState.get(dismissWarningFlagKey);
+                if (!shouldDismissWarning) {
+                    vscode.window.showWarningMessage(`You are using username and password to connect to your Postgres database. It's recommended to use passwordless connections for Azure-based services.`, 'Documentation', 'Dismiss').then((value) => {
+                        if (value === 'Documentation') {
+                            vscode.env.openExternal(vscode.Uri.parse('https://learn.microsoft.com/azure/developer/intro/passwordless-overview'));
+                        } else if (value === 'Dismiss') {
+                            ext.context.globalState.update(dismissWarningFlagKey, true);
+                        }
+                    });
+                }
             }
 
             return children;

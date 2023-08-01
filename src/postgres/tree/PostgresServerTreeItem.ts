@@ -195,7 +195,6 @@ export class PostgresServerTreeItem extends AzExtParentTreeItem {
     }
 
     public async getFullConnectionString(): Promise<ParsedPostgresConnectionString> {
-
         if (this.azureId && !(this.partialConnectionString.username && this.partialConnectionString.password)) {
             const storedValue: string | undefined = ext.context.globalState.get(PostgresServerTreeItem.serviceName);
             if (storedValue) {

@@ -13,8 +13,9 @@ import { addDatabaseToConnectionString } from "./postgresConnectionStrings";
 import { invalidCredentialsErrorType } from "./tree/PostgresDatabaseTreeItem";
 import { PostgresServerTreeItem } from "./tree/PostgresServerTreeItem";
 
-export async function getClientConfig(treeItem: PostgresServerTreeItem, databaseName: string): Promise<ClientConfig> {
+export async function getClientConfig(treeItem: PostgresServerTreeItem, databaseName: string): Promise<ClientConfig & { usePassword: boolean }> {
     let clientConfig: ClientConfig;
+    let usePassword: boolean;
     const parsedCS = await treeItem.getFullConnectionString();
     if (treeItem.azureName) {
         const username: string | undefined = parsedCS.username;
@@ -26,10 +27,18 @@ export async function getClientConfig(treeItem: PostgresServerTreeItem, database
             // Flexible Server Root Cert --> DigiCertGlobalRootCA. More info: https://aka.ms/AAd75x5
             ca: treeItem.serverType === PostgresServerType.Single ? [BaltimoreCyberTrustRoot, DigiCertGlobalRootG2] : [DigiCertGlobalRootCA]
         };
-        if ((username && password)) {
+        if (!!username) {
             const host = nonNullProp(parsedCS, 'hostName');
             const port: number = parsedCS.port ? parseInt(parsedCS.port) : parseInt(postgresDefaultPort);
-            clientConfig = { user: username, password: password, ssl: sslAzure, host, port, database: databaseName };
+
+            if (!!password) {
+                clientConfig = { user: username, password: password, ssl: sslAzure, host, port, database: databaseName };
+                usePassword = true;
+            } else {
+                const getTokenResult = await treeItem.subscription.credentials.getToken("https://ossrdbms-aad.database.windows.net/");
+                clientConfig = { user: username, password: getTokenResult.token, ssl: sslAzure, host, port, database: databaseName };
+                usePassword = false;
+            }
         } else {
             throw {
                 message: localize('mustEnterCredentials', 'Must enter credentials to connect to server.'),
@@ -37,18 +46,20 @@ export async function getClientConfig(treeItem: PostgresServerTreeItem, database
             };
         }
     } else {
+        // @todo: Passwordless connection via connection string is not supported
         let connectionString = parsedCS.connectionString;
         if (!parsedCS.databaseName) {
             connectionString = addDatabaseToConnectionString(connectionString, databaseName);
         }
         clientConfig = { connectionString: connectionString };
+        usePassword = true;
     }
 
     const client = new Client(clientConfig);
     // Ensure the client config is valid before returning
     try {
         await client.connect();
-        return clientConfig;
+        return { ...clientConfig, usePassword };
     } finally {
         await client.end();
     }
