@@ -35,8 +35,12 @@ export async function getClientConfig(treeItem: PostgresServerTreeItem, database
                 clientConfig = { user: username, password: password, ssl: sslAzure, host, port, database: databaseName };
                 usePassword = true;
             } else {
-                const getTokenResult = await treeItem.subscription.credentials.getToken("https://ossrdbms-aad.database.windows.net/");
-                clientConfig = { user: username, password: getTokenResult.token, ssl: sslAzure, host, port, database: databaseName };
+                const passwordFunc = async () => {
+                    const getTokenResult = await treeItem.subscription.credentials.getToken("https://ossrdbms-aad.database.windows.net/");
+                    return getTokenResult.token as string;
+                };
+                // Get a fresh access token every time a password is needed.
+                clientConfig = { user: username, password: passwordFunc, ssl: sslAzure, host, port, database: databaseName };
                 usePassword = false;
             }
         } else {
