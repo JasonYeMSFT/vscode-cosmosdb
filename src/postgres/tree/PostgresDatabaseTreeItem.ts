@@ -79,7 +79,7 @@ export class PostgresDatabaseTreeItem extends AzExtParentTreeItem {
                 void context.ui.showWarningMessage(localize('couldNotConnect', 'Could not connect to "{0}": {1}', this.parent.label, parsedError.message), { stepName: 'loadPostgresDatabases' });
                 const credentialsTreeItem: AzExtTreeItem = new GenericTreeItem(this, {
                     contextValue: 'postgresCredentials',
-                    label: localize('enterCredentials', 'Enter server credentials to connect to "{0}"...', this.parent.label),
+                    label: localize('enterCredentials', 'Configure server credentials to connect to "{0}"...', this.parent.label),
                     commandId: 'postgreSQL.enterCredentials'
                 });
                 credentialsTreeItem.commandArgs = [this.parent];

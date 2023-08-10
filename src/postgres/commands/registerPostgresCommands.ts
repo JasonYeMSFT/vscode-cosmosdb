@@ -5,7 +5,7 @@
 
 import { callWithTelemetryAndErrorHandling, IActionContext, registerCommandWithTreeNodeUnwrapping } from "@microsoft/vscode-azext-utils";
 import { defaults } from "pg";
-import { languages } from "vscode";
+import { env, languages, Uri } from "vscode";
 import { connectedPostgresKey, doubleClickDebounceDelay, postgresDefaultDatabase, postgresLanguageId } from "../../constants";
 import { ext } from "../../extensionVariables";
 import { PostgresCodeLensProvider } from "../services/PostgresCodeLensProvider";
@@ -25,6 +25,7 @@ import { enterPostgresCredentials } from "./enterPostgresCredentials";
 import { executePostgresQuery } from "./executePostgresQuery";
 import { openPostgresFunction } from "./openPostgresFunction";
 import { openPostgresStoredProcedure } from "./openPostgresStoredProcedure";
+import { switchToAzureAD } from "./switchPostgresDatabaseToAzureAD";
 
 export function registerPostgresCommands(): void {
     ext.postgresCodeLensProvider = new PostgresCodeLensProvider();
@@ -39,6 +40,7 @@ export function registerPostgresCommands(): void {
     registerCommandWithTreeNodeUnwrapping('postgreSQL.enterCredentials', enterPostgresCredentials);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.configureFirewall', configurePostgresFirewall);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.createDatabase', createPostgresDatabase);
+    registerCommandWithTreeNodeUnwrapping('postgreSQL.showPasswordlessDoc', showPasswordlessDoc);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.deleteDatabase', deletePostgresDatabase);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.deleteTable', deletePostgresTable);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.openFunction', openPostgresFunction, doubleClickDebounceDelay);
@@ -46,6 +48,7 @@ export function registerPostgresCommands(): void {
     registerCommandWithTreeNodeUnwrapping('postgreSQL.deleteFunction', deletePostgresFunction);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.deleteStoredProcedure', deletePostgresStoredProcedure);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.connectDatabase', connectPostgresDatabase);
+    registerCommandWithTreeNodeUnwrapping('postgreSQL.switchToAzureAD', switchToAzureAD);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.createFunctionQuery', createPostgresFunctionQuery);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.createStoredProcedureQuery', createPostgresStoredProcedureQuery);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.executeQuery', executePostgresQuery);
@@ -73,4 +76,8 @@ export async function loadPersistedPostgresDatabase(): Promise<void> {
             }
         }
     });
+}
+
+function showPasswordlessDoc(): void {
+    env.openExternal(Uri.parse("https://learn.microsoft.com/azure/developer/intro/passwordless-overview?view=azuresql-db"));
 }

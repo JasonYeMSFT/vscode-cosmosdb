@@ -6,6 +6,7 @@
 import { Client, ClientConfig } from "pg";
 import { ConnectionOptions } from "tls";
 import { postgresDefaultPort } from "../constants";
+import { getApiExport } from "../getExtensionApi";
 import { localize } from "../utils/localize";
 import { nonNullProp } from "../utils/nonNull";
 import { PostgresServerType } from "./abstract/models";
@@ -13,12 +14,17 @@ import { addDatabaseToConnectionString } from "./postgresConnectionStrings";
 import { invalidCredentialsErrorType } from "./tree/PostgresDatabaseTreeItem";
 import { PostgresServerTreeItem } from "./tree/PostgresServerTreeItem";
 
+const azureAccountExtensionId = "ms-vscode.azure-account";
+const postgresResourceType = "https://ossrdbms-aad.database.windows.net/";
+
 export async function getClientConfig(treeItem: PostgresServerTreeItem, databaseName: string): Promise<ClientConfig> {
-    let clientConfig: ClientConfig;
+    let clientConfig: ClientConfig | undefined;
     const parsedCS = await treeItem.getFullConnectionString();
     if (treeItem.azureName) {
         const username: string | undefined = parsedCS.username;
         const password: string | undefined = parsedCS.password;
+        const host = nonNullProp(parsedCS, 'hostName');
+        const port: number = parsedCS.port ? parseInt(parsedCS.port) : parseInt(postgresDefaultPort);
 
         const sslAzure: ConnectionOptions = {
             // Always provide the certificate since it is accepted even when SSL is disabled
@@ -26,15 +32,24 @@ export async function getClientConfig(treeItem: PostgresServerTreeItem, database
             // Flexible Server Root Cert --> DigiCertGlobalRootCA. More info: https://aka.ms/AAd75x5
             ca: treeItem.serverType === PostgresServerType.Single ? [BaltimoreCyberTrustRoot, DigiCertGlobalRootG2] : [DigiCertGlobalRootCA]
         };
-        if ((username && password)) {
-            const host = nonNullProp(parsedCS, 'hostName');
-            const port: number = parsedCS.port ? parseInt(parsedCS.port) : parseInt(postgresDefaultPort);
-            clientConfig = { user: username, password: password, ssl: sslAzure, host, port, database: databaseName };
-        } else {
-            throw {
-                message: localize('mustEnterCredentials', 'Must enter credentials to connect to server.'),
-                code: invalidCredentialsErrorType
-            };
+        if (!!host && !!port) {
+            const baseClientClient = { ssl: sslAzure, host, port, database: databaseName };
+            if (!!username && !!password) {
+                clientConfig = { ...baseClientClient, user: username, password: password };
+            } else {
+                const azureAccountExport: any = await getApiExport(azureAccountExtensionId);
+                const session = azureAccountExport.sessions?.[0];
+
+                if (!!session) {
+                    const passwordFunc = async () => {
+                        const getTokenResult = await treeItem.subscription.credentials.getToken(postgresResourceType);
+                        return getTokenResult.token as string;
+                    };
+                    // Get the user name from the signed in Azure account
+                    // Get a fresh access token every time a password is needed.
+                    clientConfig = { ...baseClientClient, user: session.userId, password: passwordFunc };
+                }
+            }
         }
     } else {
         let connectionString = parsedCS.connectionString;
@@ -42,6 +57,13 @@ export async function getClientConfig(treeItem: PostgresServerTreeItem, database
             connectionString = addDatabaseToConnectionString(connectionString, databaseName);
         }
         clientConfig = { connectionString: connectionString };
+    }
+
+    if (!clientConfig) {
+        throw {
+            message: localize('mustEnterCredentials', 'Must enter credentials to connect to server.'),
+            code: invalidCredentialsErrorType
+        };
     }
 
     const client = new Client(clientConfig);
