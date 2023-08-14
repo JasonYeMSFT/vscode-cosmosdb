@@ -48,7 +48,6 @@ export async function enterPostgresCredentials(context: IActionContext, treeItem
         learnMoreOption
     ], {
         placeHolder: `Select credential type to use for server "${treeItem.label}"`,
-        learnMoreLink: postgresFlexibleAzureADDocumentationLink,
         enableGrouping: true
     });
 
@@ -92,22 +91,25 @@ export async function enterPostgresCredentials(context: IActionContext, treeItem
 
         treeItem.setCredentials(username, password);
 
-        await treeItem.refresh(context);
+        await treeItem?.parent?.refresh?.(context);
     } else if (result === aadCredentialOption) {
         // @todo: Code will reach here if user choose to use Azure AD and the currently it doesn't work.
-        // Open the portal page so user can configure it.
-        const portalUrl = treeItem?.subscription?.environment?.portalUrl;
-        const azureId = treeItem?.azureId;
-        if (!!portalUrl && !!azureId) {
-            const urlObj = new URL(portalUrl);
-            urlObj.hash = `@microsoft.onmicrosoft.com/resource${azureId}/activeDirectoryAdmins`;
-            vscode.env.openExternal(vscode.Uri.parse(urlObj.toString()));
-        } else if (portalUrl) {
-            vscode.env.openExternal(vscode.Uri.parse(portalUrl));
-        } else {
-            // @todo: Show an error notification.
-        }
+        openDatabaseAuthenticationPage(treeItem);
     } else {
         vscode.env.openExternal(vscode.Uri.parse(postgresFlexibleAzureADDocumentationLink));
+    }
+}
+
+export function openDatabaseAuthenticationPage(treeItem: PostgresServerTreeItem): void {
+    const portalUrl = treeItem?.subscription?.environment?.portalUrl;
+    const azureId = treeItem?.azureId;
+    if (!!portalUrl && !!azureId) {
+        const urlObj = new URL(portalUrl);
+        urlObj.hash = `@microsoft.onmicrosoft.com/resource${azureId}/activeDirectoryAdmins`;
+        vscode.env.openExternal(vscode.Uri.parse(urlObj.toString()));
+    } else if (portalUrl) {
+        vscode.env.openExternal(vscode.Uri.parse(portalUrl));
+    } else {
+        // @todo: Show an error notification.
     }
 }

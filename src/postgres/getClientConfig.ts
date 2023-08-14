@@ -17,12 +17,14 @@ import { PostgresServerTreeItem } from "./tree/PostgresServerTreeItem";
 const azureAccountExtensionId = "ms-vscode.azure-account";
 const postgresResourceType = "https://ossrdbms-aad.database.windows.net/";
 
-export async function getClientConfig(treeItem: PostgresServerTreeItem, databaseName: string): Promise<ClientConfig> {
-    let clientConfig: ClientConfig | undefined;
+async function getBaseClientConfig(treeItem: PostgresServerTreeItem, databaseName: string): Promise<{
+    ssl: ConnectionOptions,
+    host: string,
+    port: number,
+    database: string
+} | undefined> {
     const parsedCS = await treeItem.getFullConnectionString();
     if (treeItem.azureName) {
-        const username: string | undefined = parsedCS.username;
-        const password: string | undefined = parsedCS.password;
         const host = nonNullProp(parsedCS, 'hostName');
         const port: number = parsedCS.port ? parseInt(parsedCS.port) : parseInt(postgresDefaultPort);
 
@@ -33,24 +35,23 @@ export async function getClientConfig(treeItem: PostgresServerTreeItem, database
             ca: treeItem.serverType === PostgresServerType.Single ? [BaltimoreCyberTrustRoot, DigiCertGlobalRootG2] : [DigiCertGlobalRootCA]
         };
         if (!!host && !!port) {
-            const baseClientClient = { ssl: sslAzure, host, port, database: databaseName };
-            if (!!username && !!password) {
-                clientConfig = { ...baseClientClient, user: username, password: password };
-            } else {
-                const azureAccountExport: any = await getApiExport(azureAccountExtensionId);
-                const session = azureAccountExport.sessions?.[0];
-
-                if (!!session) {
-                    const passwordFunc = async () => {
-                        const getTokenResult = await treeItem.subscription.credentials.getToken(postgresResourceType);
-                        return getTokenResult.token as string;
-                    };
-                    // Get the user name from the signed in Azure account
-                    // Get a fresh access token every time a password is needed.
-                    clientConfig = { ...baseClientClient, user: session.userId, password: passwordFunc };
-                }
-            }
+            return { ssl: sslAzure, host, port, database: databaseName };
         }
+    }
+    return undefined;
+}
+
+export async function getPasswordClientConfig(treeItem: PostgresServerTreeItem, databaseName: string): Promise<ClientConfig | undefined> {
+    let clientConfig: ClientConfig | undefined;
+    const baseConfig = await getBaseClientConfig(treeItem, databaseName);
+    const parsedCS = await treeItem.getFullConnectionString();
+    if (!!baseConfig) {
+        const username: string | undefined = parsedCS.username;
+        const password: string | undefined = parsedCS.password;
+        if (!!username && !!password) {
+            clientConfig = { ...baseConfig, user: username, password: password };
+        }
+
     } else {
         let connectionString = parsedCS.connectionString;
         if (!parsedCS.databaseName) {
@@ -60,10 +61,7 @@ export async function getClientConfig(treeItem: PostgresServerTreeItem, database
     }
 
     if (!clientConfig) {
-        throw {
-            message: localize('mustEnterCredentials', 'Must enter credentials to connect to server.'),
-            code: invalidCredentialsErrorType
-        };
+        return undefined;
     }
 
     const client = new Client(clientConfig);
@@ -73,6 +71,61 @@ export async function getClientConfig(treeItem: PostgresServerTreeItem, database
         return clientConfig;
     } finally {
         await client.end();
+    }
+}
+
+export async function getAzureADClientConfig(treeItem: PostgresServerTreeItem, databaseName: string): Promise<ClientConfig | undefined> {
+    let clientConfig: ClientConfig | undefined;
+    const baseConfig = await getBaseClientConfig(treeItem, databaseName);
+
+    const azureAccountExport: any = await getApiExport(azureAccountExtensionId);
+    const session = azureAccountExport.sessions?.[0];
+    if (!!session) {
+        const passwordFunc = async () => {
+            const getTokenResult = await treeItem.subscription.credentials.getToken(postgresResourceType);
+            return getTokenResult.token as string;
+        };
+        // Get the user name from the signed in Azure account.
+        // Get a fresh access token every time a password is needed.
+        clientConfig = { ...baseConfig, user: session.userId, password: passwordFunc };
+    }
+
+    if (!clientConfig) {
+        return undefined;
+    }
+
+    const client = new Client(clientConfig);
+    // Ensure the client config is valid before returning
+    try {
+        await client.connect();
+        return clientConfig;
+    } finally {
+        await client.end();
+    }
+}
+
+export async function getClientConfig(treeItem: PostgresServerTreeItem, databaseName: string,): Promise<ClientConfig> {
+    let clientConfig: ClientConfig | undefined;
+
+    try {
+        clientConfig = await getPasswordClientConfig(treeItem, databaseName);
+    } catch (error) {
+        // Noop
+    }
+
+    try {
+        clientConfig = await getAzureADClientConfig(treeItem, databaseName);
+    } catch (error) {
+        // Noop
+    }
+
+    if (!!clientConfig) {
+        return clientConfig
+    } else {
+        throw {
+            message: localize('mustEnterCredentials', 'Must enter credentials to connect to server.'),
+            code: invalidCredentialsErrorType
+        }
     }
 }
 
