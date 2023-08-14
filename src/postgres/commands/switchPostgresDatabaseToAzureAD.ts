@@ -55,7 +55,7 @@ export async function switchToAzureAD(context: IActionContext, node?: PostgresSe
             // Auto refresh the server's parent node to
             // - update the state of the node
             // - reload resources using the new credential
-            node?.parent?.refresh?.(context);
+            node.refresh(context);
         } else if (result === DialogResponses.learnMore) {
             vscode.env.openExternal(vscode.Uri.parse(postgresFlexibleAzureADDocumentationLink));
         }
