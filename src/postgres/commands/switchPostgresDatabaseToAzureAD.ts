@@ -36,6 +36,8 @@ export async function switchToAzureAD(context: IActionContext, node?: PostgresSe
     if (!azureADClientConfig) {
         // We know the user hasn't configured his Azure AD credentials because it cannot connect to his database.
         // Open the authentication page for him to configure.
+        const message: string = localize('switchToAzureADFailure', 'Failed to connect to the database server using Azure AD credential. Please configure the Azure AD user and retry switching.');
+        void vscode.window.showInformationMessage(message);
         openDatabaseAuthenticationPage(node);
     } else {
         const message: string = localize('switchToAzureADPrompt', 'Switching to authenticate with Azure AD will delete the stored password for database server "{0}". Please make sure you have configured the Azure AD roles and transferred the ownership of resources.', node.azureName);

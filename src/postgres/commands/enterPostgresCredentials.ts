@@ -91,9 +91,8 @@ export async function enterPostgresCredentials(context: IActionContext, treeItem
 
         treeItem.setCredentials(username, password);
 
-        await treeItem?.parent?.refresh?.(context);
+        await treeItem.refresh(context);
     } else if (result === aadCredentialOption) {
-        // @todo: Code will reach here if user choose to use Azure AD and the currently it doesn't work.
         openDatabaseAuthenticationPage(treeItem);
     } else {
         vscode.env.openExternal(vscode.Uri.parse(postgresFlexibleAzureADDocumentationLink));
@@ -110,6 +109,6 @@ export function openDatabaseAuthenticationPage(treeItem: PostgresServerTreeItem)
     } else if (portalUrl) {
         vscode.env.openExternal(vscode.Uri.parse(portalUrl));
     } else {
-        // @todo: Show an error notification.
+        // @todo: Open a generic documentation page as fallback.
     }
 }
