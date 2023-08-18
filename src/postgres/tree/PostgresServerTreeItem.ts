@@ -6,7 +6,7 @@
 import * as SingleModels from '@azure/arm-postgresql';
 import * as FlexibleModels from '@azure/arm-postgresql-flexible';
 import { getResourceGroupFromId, parseAzureResourceId, uiUtils } from '@microsoft/vscode-azext-azureutils';
-import { AzExtParentTreeItem, AzExtTreeItem, IActionContext, ICreateChildImplContext } from '@microsoft/vscode-azext-utils';
+import { AzExtParentTreeItem, AzExtTreeItem, IActionContext, ICreateChildImplContext, createContextValue } from '@microsoft/vscode-azext-utils';
 import { ClientConfig } from 'pg';
 import { SemVer, coerce, gte } from 'semver';
 import * as vscode from 'vscode';
@@ -37,7 +37,7 @@ interface IPersistedServer {
 export class PostgresServerTreeItem extends AzExtParentTreeItem {
     public static contextValue: string = "postgresServer";
     public static serviceName: string = "ms-azuretools.vscode-azuredatabases.postgresPasswords";
-    public readonly contextValue: string = PostgresServerTreeItem.contextValue;
+    public readonly contextValue: string;
     public readonly childTypeLabel: string = "Database";
     public readonly serverType: PostgresServerType;
 
@@ -62,6 +62,10 @@ export class PostgresServerTreeItem extends AzExtParentTreeItem {
         if (connectionString.databaseName) {
             this.valuesToMask.push(connectionString.databaseName);
         }
+        const shouldShowPasswordWarning = this.shouldShowPasswordWarning();
+        this.contextValue = shouldShowPasswordWarning ?
+            createContextValue([PostgresServerTreeItem.contextValue, "showPasswordWarning"])
+            : createContextValue([PostgresServerTreeItem.contextValue]);
     }
 
     public get iconPath(): string | vscode.Uri | { light: string | vscode.Uri; dark: string | vscode.Uri } {
@@ -233,6 +237,18 @@ export class PostgresServerTreeItem extends AzExtParentTreeItem {
         return this.partialConnectionString;
     }
 
+    private shouldShowPasswordWarning(): boolean {
+        if (this.serverType === PostgresServerType.Flexible) {
+            const serviceName: string = PostgresServerTreeItem.serviceName;
+            const storedValue: string | undefined = ext.context.globalState.get(serviceName);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            let servers: IPersistedServer[] = storedValue ? JSON.parse(storedValue) : [];
+
+            return servers.some((server: IPersistedServer) => { return server.id === this.id; });
+        } else {
+            return false;
+        }
+    }
 }
 
 async function validateDatabaseName(name: string, getChildrenTask: Promise<AzExtTreeItem[]>): Promise<string | undefined | null> {

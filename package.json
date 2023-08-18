@@ -87,6 +87,7 @@
         "onCommand:postgreSQL.executeQuery",
         "onCommand:postgreSQL.openFunction",
         "onCommand:postgreSQL.openStoredProcedure",
+        "postgreSQL.showPasswordlessIntroDocumentation",
         "onFileSystem:azureDatabases",
         "onLanguage:mongo",
         "onView:azureWorkspace"
@@ -434,6 +435,12 @@
                 "category": "PostgreSQL",
                 "command": "postgreSQL.openStoredProcedure",
                 "title": "Open Stored Procedure"
+            },
+            {
+                "category": "PostgreSQL",
+                "command": "postgreSQL.showPasswordlessIntroDocumentation",
+                "title": "Learn why authenticating with password is no longer recommended",
+                "icon": "$(warning)"
             }
         ],
         "submenus": [
@@ -603,6 +610,11 @@
                     "command": "cosmosDB.createGraph",
                     "when": "view =~ /azure(ResourceGroups|Workspace|FocusView)/ && viewItem == cosmosDBGraphDatabase",
                     "group": "1@1"
+                },
+                {
+                    "command": "postgreSQL.showPasswordlessIntroDocumentation",
+                    "when": "view =~ /(azureResourceGroups|azureFocusView)/ && viewItem =~ /postgresServer(?![a-z])/i && viewItem =~ /showPasswordWarning/i",
+                    "group": "inline"
                 },
                 {
                     "command": "postgreSQL.createDatabase",

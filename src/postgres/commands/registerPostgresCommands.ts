@@ -5,7 +5,7 @@
 
 import { callWithTelemetryAndErrorHandling, IActionContext, registerCommandWithTreeNodeUnwrapping } from "@microsoft/vscode-azext-utils";
 import { defaults } from "pg";
-import { languages } from "vscode";
+import { env, languages, Uri } from "vscode";
 import { connectedPostgresKey, doubleClickDebounceDelay, postgresDefaultDatabase, postgresLanguageId } from "../../constants";
 import { ext } from "../../extensionVariables";
 import { PostgresCodeLensProvider } from "../services/PostgresCodeLensProvider";
@@ -50,6 +50,7 @@ export function registerPostgresCommands(): void {
     registerCommandWithTreeNodeUnwrapping('postgreSQL.createStoredProcedureQuery', createPostgresStoredProcedureQuery);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.executeQuery', executePostgresQuery);
     registerCommandWithTreeNodeUnwrapping('postgreSQL.copyConnectionString', copyConnectionString);
+    registerCommandWithTreeNodeUnwrapping('postgreSQL.showPasswordlessIntroDocumentation', showPasswordlessIntroDocumentation);
 }
 
 export async function loadPersistedPostgresDatabase(): Promise<void> {
@@ -73,4 +74,11 @@ export async function loadPersistedPostgresDatabase(): Promise<void> {
             }
         }
     });
+}
+
+/**
+ * @todo: Use forward linnk
+ */
+export function showPasswordlessIntroDocumentation(): void {
+    env.openExternal(Uri.parse("https://learn.microsoft.com/azure/developer/intro/passwordless-overview?view=azuresql-db"));
 }
