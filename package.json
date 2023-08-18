@@ -87,7 +87,7 @@
         "onCommand:postgreSQL.executeQuery",
         "onCommand:postgreSQL.openFunction",
         "onCommand:postgreSQL.openStoredProcedure",
-        "postgreSQL.showPasswordlessIntroDocumentation",
+        "onCommand:postgreSQL.showPasswordlessIntroDocumentation",
         "onFileSystem:azureDatabases",
         "onLanguage:mongo",
         "onView:azureWorkspace"
