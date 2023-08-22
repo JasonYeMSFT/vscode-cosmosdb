@@ -78,7 +78,7 @@ export async function getClientConfig(
             ca: serverType === PostgresServerType.Single ? [BaltimoreCyberTrustRoot, DigiCertGlobalRootG2] : [DigiCertGlobalRootCA]
         };
 
-        const preferAzureAd = workspace.getConfiguration().get<boolean>("postgres.preferAzureAd");
+        const preferAzureAd = workspace.getConfiguration().get<boolean>("postgres.preferAzureAD");
         const passwordClientConfig = await getUsernamePasswordClientConfig(parsedConnectionString, sslAzure, databaseName);
         let azureAdClientConfig: ClientConfig | undefined;
         if (serverType === PostgresServerType.Flexible && !!azureUserId && !!getToken) {
