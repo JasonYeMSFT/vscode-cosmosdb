@@ -8,7 +8,7 @@ import { FirewallRule } from '@azure/arm-postgresql';
 import { uiUtils } from '@microsoft/vscode-azext-azureutils';
 import { AzExtParentTreeItem, AzExtTreeItem, GenericTreeItem, IActionContext, IParsedError, parseError, TreeItemIconPath } from '@microsoft/vscode-azext-utils';
 import { ClientConfig } from 'pg';
-import { ThemeIcon } from 'vscode';
+import { ThemeIcon, workspace } from 'vscode';
 import { getAzureAdUserSession, getTokenCredential } from '../../azureAccountUtils';
 import { postgresDefaultDatabase } from '../../constants';
 import { ext } from '../../extensionVariables';
@@ -63,11 +63,13 @@ export class PostgresDatabaseTreeItem extends AzExtParentTreeItem {
             const serverTreeItem = this.parent;
             const parsedConnectionString = await serverTreeItem.getFullConnectionString();
             const azureUserSession = await getAzureAdUserSession();
+            const preferAzureAD = workspace.getConfiguration().get<boolean>("postgres.preferAzureAD");
             const clientConfig: ClientConfig = await getClientConfigWithValidation(
                 parsedConnectionString,
                 serverTreeItem.serverType,
                 !!serverTreeItem.azureName,
                 this.databaseName,
+                preferAzureAD ?? false,
                 azureUserSession?.userId,
                 getTokenCredential(serverTreeItem.subscription.credentials, postgresResourceType)
             );
@@ -111,11 +113,13 @@ export class PostgresDatabaseTreeItem extends AzExtParentTreeItem {
         const serverTreeItem = this.parent;
         const parsedConnectionString = await serverTreeItem.getFullConnectionString();
         const azureUserSession = await getAzureAdUserSession();
+        const preferAzureAD = workspace.getConfiguration().get<boolean>("postgres.preferAzureAD");
         const clientConfig = await getClientConfigWithValidation(
             parsedConnectionString,
             serverTreeItem.serverType,
             !!serverTreeItem.azureName,
             postgresDefaultDatabase,
+            preferAzureAD ?? false,
             azureUserSession?.userId,
             getTokenCredential(serverTreeItem.subscription.credentials, postgresResourceType)
         );

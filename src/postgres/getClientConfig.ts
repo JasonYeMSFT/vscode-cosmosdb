@@ -5,7 +5,6 @@
 
 import { Client, ClientConfig } from "pg";
 import { ConnectionOptions } from "tls";
-import { workspace } from "vscode";
 import { postgresDefaultPort } from "../constants";
 import { localize } from "../utils/localize";
 import { nonNullProp } from "../utils/nonNull";
@@ -66,6 +65,7 @@ export async function getClientConfig(
     serverType: PostgresServerType,
     hasSubscription: boolean,
     databaseName: string,
+    preferAzureAD: boolean,
     azureUserId?: string,
     getToken?: () => Promise<string>
 ): Promise<ClientConfig | undefined> {
@@ -78,13 +78,12 @@ export async function getClientConfig(
             ca: serverType === PostgresServerType.Single ? [BaltimoreCyberTrustRoot, DigiCertGlobalRootG2] : [DigiCertGlobalRootCA]
         };
 
-        const preferAzureAd = workspace.getConfiguration().get<boolean>("postgres.preferAzureAD");
         const passwordClientConfig = await getUsernamePasswordClientConfig(parsedConnectionString, sslAzure, databaseName);
         let azureAdClientConfig: ClientConfig | undefined;
         if (serverType === PostgresServerType.Flexible && !!azureUserId && !!getToken) {
             azureAdClientConfig = await getAzureAdClientConfig(parsedConnectionString, sslAzure, databaseName, azureUserId, getToken);
         }
-        if (preferAzureAd) {
+        if (preferAzureAD) {
             clientConfig = azureAdClientConfig ?? passwordClientConfig;
         } else {
             clientConfig = passwordClientConfig ?? azureAdClientConfig;
@@ -103,6 +102,7 @@ export async function getClientConfigWithValidation(
     serverType: PostgresServerType,
     hasSubscription: boolean,
     databaseName: string,
+    preferAzureAD: boolean,
     azureUserId?: string,
     getToken?: () => Promise<string>
 ): Promise<ClientConfig> {
@@ -110,6 +110,7 @@ export async function getClientConfigWithValidation(
         serverType,
         hasSubscription,
         databaseName,
+        preferAzureAD,
         azureUserId,
         getToken
     );

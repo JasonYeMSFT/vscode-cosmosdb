@@ -111,11 +111,13 @@ export class PostgresServerTreeItem extends AzExtParentTreeItem {
         } else {
             const parsedConnectionString = await this.getFullConnectionString();
             const azureUserSession = await getAzureAdUserSession();
+            const preferAzureAD = vscode.workspace.getConfiguration().get<boolean>("postgres.preferAzureAD");
             const clientConfig = await getClientConfigWithValidation(
                 parsedConnectionString,
                 this.serverType,
                 !!this.azureName,
                 postgresDefaultDatabase,
+                preferAzureAD ?? false,
                 azureUserSession?.userId,
                 getTokenCredential(this.subscription.credentials, postgresResourceType)
             );
@@ -161,11 +163,13 @@ export class PostgresServerTreeItem extends AzExtParentTreeItem {
         });
         const parsedConnectionString = await this.getFullConnectionString();
         const azureUserSession = await getAzureAdUserSession();
+        const preferAzureAD = vscode.workspace.getConfiguration().get<boolean>("postgres.preferAzureAD");
         const clientConfig = await getClientConfigWithValidation(
             parsedConnectionString,
             this.serverType,
             !!this.azureName,
             postgresDefaultDatabase,
+            preferAzureAD ?? false,
             azureUserSession?.userId,
             getTokenCredential(this.subscription.credentials, postgresResourceType)
         );
