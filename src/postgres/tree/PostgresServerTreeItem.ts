@@ -62,8 +62,9 @@ export class PostgresServerTreeItem extends AzExtParentTreeItem {
         if (connectionString.databaseName) {
             this.valuesToMask.push(connectionString.databaseName);
         }
-        const shouldShowPasswordWarning = this.shouldShowPasswordWarning();
-        this.contextValue = shouldShowPasswordWarning ?
+        const hasPasswordConnection = this.hasPasswordConnection();
+        const preferAzureAd = vscode.workspace.getConfiguration().get<boolean>("postgres.preferAzureAd");
+        this.contextValue = hasPasswordConnection && !preferAzureAd ?
             createContextValue([PostgresServerTreeItem.contextValue, "showPasswordWarning"])
             : createContextValue([PostgresServerTreeItem.contextValue]);
     }
@@ -237,7 +238,7 @@ export class PostgresServerTreeItem extends AzExtParentTreeItem {
         return this.partialConnectionString;
     }
 
-    private shouldShowPasswordWarning(): boolean {
+    private hasPasswordConnection(): boolean {
         if (this.serverType === PostgresServerType.Flexible) {
             const serviceName: string = PostgresServerTreeItem.serviceName;
             const storedValue: string | undefined = ext.context.globalState.get(serviceName);

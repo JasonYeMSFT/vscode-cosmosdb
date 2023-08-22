@@ -5,6 +5,7 @@
 
 import { Client, ClientConfig } from "pg";
 import { ConnectionOptions } from "tls";
+import { workspace } from "vscode";
 import { postgresDefaultPort } from "../constants";
 import { localize } from "../utils/localize";
 import { nonNullProp } from "../utils/nonNull";
@@ -76,13 +77,19 @@ export async function getClientConfig(
             // Flexible Server Root Cert --> DigiCertGlobalRootCA. More info: https://aka.ms/AAd75x5
             ca: serverType === PostgresServerType.Single ? [BaltimoreCyberTrustRoot, DigiCertGlobalRootG2] : [DigiCertGlobalRootCA]
         };
+
+        const preferAzureAd = workspace.getConfiguration().get<boolean>("postgres.preferAzureAd");
         const passwordClientConfig = await getUsernamePasswordClientConfig(parsedConnectionString, sslAzure, databaseName);
-        if (passwordClientConfig) {
-            clientConfig = passwordClientConfig;
-        } else if (serverType === PostgresServerType.Flexible && !!azureUserId && !!getToken) {
-            const azureAdClientConfig = await getAzureAdClientConfig(parsedConnectionString, sslAzure, databaseName, azureUserId, getToken);
-            clientConfig = azureAdClientConfig;
+        let azureAdClientConfig: ClientConfig | undefined;
+        if (serverType === PostgresServerType.Flexible && !!azureUserId && !!getToken) {
+            azureAdClientConfig = await getAzureAdClientConfig(parsedConnectionString, sslAzure, databaseName, azureUserId, getToken);
         }
+        if (preferAzureAd) {
+            clientConfig = azureAdClientConfig ?? passwordClientConfig;
+        } else {
+            clientConfig = passwordClientConfig ?? azureAdClientConfig;
+        }
+
     } else {
         const connectionStringClientConfig = await getConnectionStringClientConfig(parsedConnectionString, databaseName);
         clientConfig = connectionStringClientConfig;

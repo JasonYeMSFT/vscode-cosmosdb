@@ -1028,6 +1028,11 @@
                     "type": "integer",
                     "default": 8081,
                     "description": "Port to use when connecting to a CosmosDB Emulator instance"
+                },
+                "postgres.preferAzureAd": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Prefer Azure AD credential over username and password when connecting to PostgreSQL flexible servers"
                 }
             }
         }
