@@ -63,7 +63,7 @@ export class PostgresServerTreeItem extends AzExtParentTreeItem {
             this.valuesToMask.push(connectionString.databaseName);
         }
         const hasPasswordConnection = this.hasPasswordConnection();
-        const preferAzureAd = vscode.workspace.getConfiguration().get<boolean>("postgres.preferAzureAd");
+        const preferAzureAd = vscode.workspace.getConfiguration().get<boolean>("postgres.preferAzureAD");
         this.contextValue = hasPasswordConnection && !preferAzureAd ?
             createContextValue([PostgresServerTreeItem.contextValue, "showPasswordWarning"])
             : createContextValue([PostgresServerTreeItem.contextValue]);
