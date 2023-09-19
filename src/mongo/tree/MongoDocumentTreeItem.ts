@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { AzExtTreeItem, DialogResponses, IActionContext, TreeItemIconPath } from '@microsoft/vscode-azext-utils';
+import { EJSON } from 'bson';
 import { Collection, DeleteWriteOpResultObject, ObjectID, UpdateWriteOpResult } from 'mongodb';
 import * as _ from 'underscore';
 import * as vscode from 'vscode';
@@ -11,8 +12,6 @@ import { IEditableTreeItem } from '../../DatabasesFileSystem';
 import { ext } from '../../extensionVariables';
 import { getDocumentTreeItemLabel } from '../../utils/vscodeUtils';
 import { MongoCollectionTreeItem } from './MongoCollectionTreeItem';
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires
-const EJSON = require("mongodb-extended-json");
 
 export interface IMongoDocument {
     _id: string | ObjectID;
@@ -71,8 +70,7 @@ export class MongoDocumentTreeItem extends AzExtTreeItem implements IEditableTre
     }
 
     public async getFileContent(): Promise<string> {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        return EJSON.stringify(this.document, null, 2);
+        return EJSON.stringify(this.document, null as any, 2);
     }
 
     public async refreshImpl(): Promise<void> {
@@ -90,8 +88,7 @@ export class MongoDocumentTreeItem extends AzExtTreeItem implements IEditableTre
     }
 
     public async writeFileContent(_context: IActionContext, content: string): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        const newDocument: IMongoDocument = EJSON.parse(content);
+        const newDocument: IMongoDocument = EJSON.parse(content) as IMongoDocument;
         this.document = await MongoDocumentTreeItem.update(this.parent.collection, newDocument);
     }
 }

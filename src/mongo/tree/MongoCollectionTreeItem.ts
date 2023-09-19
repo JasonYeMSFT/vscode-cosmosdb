@@ -7,6 +7,7 @@
 
 import { AzExtParentTreeItem, AzExtTreeItem, DialogResponses, IActionContext, ICreateChildImplContext, TreeItemIconPath } from '@microsoft/vscode-azext-utils';
 import * as assert from 'assert';
+import { EJSON } from "bson";
 import { BulkWriteOpResultObject, Collection, CollectionInsertManyOptions, Cursor, DeleteWriteOpResultObject, InsertOneWriteOpResult, InsertWriteOpResult, MongoCountPreferences } from 'mongodb';
 import * as _ from 'underscore';
 import * as vscode from 'vscode';
@@ -17,8 +18,6 @@ import { getDocumentTreeItemLabel } from '../../utils/vscodeUtils';
 import { getBatchSizeSetting } from '../../utils/workspacUtils';
 import { MongoCommand } from '../MongoCommand';
 import { IMongoDocument, MongoDocumentTreeItem } from './MongoDocumentTreeItem';
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires
-const EJSON = require("mongodb-extended-json");
 
 type MongoFunction = (...args: ({} | {}[] | undefined)[]) => Thenable<string>;
 type MongoDocument = { _id: string };
@@ -55,8 +54,7 @@ export class MongoCollectionTreeItem extends AzExtParentTreeItem implements IEdi
     }
 
     public async writeFileContent(context: IActionContext, content: string): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        const documents: IMongoDocument[] = EJSON.parse(content);
+        const documents: IMongoDocument[] = EJSON.parse(content) as IMongoDocument[];
         const operations = documents.map((document) => {
             return {
                 replaceOne: {
@@ -89,8 +87,7 @@ export class MongoCollectionTreeItem extends AzExtParentTreeItem implements IEdi
 
     public async getFileContent(context: IActionContext): Promise<string> {
         const children = <MongoDocumentTreeItem[]>await this.getCachedChildren(context);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        return EJSON.stringify(children.map(c => c.document), null, 2);
+        return EJSON.stringify(children.map(c => c.document), null as any, 2);
     }
 
     public get id(): string {
@@ -233,8 +230,7 @@ export class MongoCollectionTreeItem extends AzExtParentTreeItem implements IEdi
         const result = await this.collection.findOne(query || {}, { fields: fieldsOption });
         // findOne is the only command in this file whose output requires EJSON support.
         // Hence that's the only function which uses EJSON.stringify rather than this.stringify.
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        return EJSON.stringify(result, null, '\t');
+        return EJSON.stringify(result, null as any, '\t');
     }
 
     private async insert(document: Object): Promise<string> {

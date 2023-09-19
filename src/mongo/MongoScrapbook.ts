@@ -9,7 +9,7 @@ import { CommonTokenStream } from 'antlr4ts/CommonTokenStream';
 import { ErrorNode } from 'antlr4ts/tree/ErrorNode';
 import { ParseTree } from 'antlr4ts/tree/ParseTree';
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode';
-import { ObjectID } from 'bson';
+import { EJSON, ObjectID } from 'bson';
 import { Collection } from 'mongodb';
 import { EOL } from 'os';
 import * as vscode from 'vscode';
@@ -25,8 +25,6 @@ import { ErrorDescription, MongoCommand } from './MongoCommand';
 import { MongoCollectionTreeItem } from './tree/MongoCollectionTreeItem';
 import { MongoDatabaseTreeItem, stripQuotes } from './tree/MongoDatabaseTreeItem';
 import { IMongoDocument, MongoDocumentTreeItem } from './tree/MongoDocumentTreeItem';
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires
-const EJSON = require("mongodb-extended-json");
 
 const notInScrapbookMessage = "You must have a MongoDB scrapbook (*.mongo) open to run a MongoDB command.";
 
@@ -124,8 +122,7 @@ async function executeCommand(context: IActionContext, command: MongoCommand, re
                     throw new Error(`Could not find any documents`);
                 }
 
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-                const document: IMongoDocument = EJSON.parse(result);
+                const document: IMongoDocument = EJSON.parse(result) as IMongoDocument;
                 const collectionName: string = nonNullProp(command, 'collection');
 
                 const collectionId: string = `${database.fullId}/${collectionName}`;
@@ -487,5 +484,4 @@ class FindMongoCommandsVisitor extends MongoVisitor<MongoCommand[]> {
         */
         return argAsString.replace(removeDuplicatedBackslash, `\\\\$1`);
     }
-
 }

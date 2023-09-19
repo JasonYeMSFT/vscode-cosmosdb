@@ -20,8 +20,6 @@ import { RuleContext } from 'antlr4ts/RuleContext';
 import { Vocabulary } from 'antlr4ts/Vocabulary';
 import { VocabularyImpl } from 'antlr4ts/VocabularyImpl';
 
-
-
 export class mongoLexer extends Lexer {
     public static readonly T__0 = 1;
     public static readonly T__1 = 2;

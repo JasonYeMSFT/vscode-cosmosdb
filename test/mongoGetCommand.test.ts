@@ -754,7 +754,7 @@ suite("scrapbook parsing Tests", () => {
         const text = `db.c1.insert({"name": ObjectId("${idParam}")})`;
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
-        const errorMessage = "Argument passed in must be a single String of 12 bytes or a string of 24 hex characters";
+        const errorMessage = "Argument passed in must be a string of 12 bytes or a string of 24 hex characters or an integer";
         assert.deepEqual(command.collection, "c1");
         assert.deepEqual(command.argumentObjects, [{ name: {} }]);
         assert.deepEqual(nonNullProp(command, 'errors')[0].message, errorMessage);
@@ -766,7 +766,7 @@ suite("scrapbook parsing Tests", () => {
             const text = `db.c1.insert({"name": ObjectId(${wrapInQuotes(idParam, i)})})`;
             const commands: MongoCommand[] = getAllCommandsFromText(text);
             const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
-            const errorMessage = "Argument passed in must be a single String of 12 bytes or a string of 24 hex characters";
+            const errorMessage = "Argument passed in must be a string of 12 bytes or a string of 24 hex characters or an integer";
             assert.deepEqual(command.collection, "c1");
             assert.deepEqual(command.argumentObjects, [{ name: {} }]);
             assert.deepEqual(nonNullProp(command, 'errors')[0].message, errorMessage);
@@ -778,8 +778,8 @@ suite("scrapbook parsing Tests", () => {
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
         const generatedRegExp = (<any>nonNullProp(command, 'argumentObjects')[0]).sku;
-        assert.deepEqual(generatedRegExp.flags, "");
-        assert.deepEqual(generatedRegExp.source, "789$");
+        assert.deepEqual(generatedRegExp.options, "");
+        assert.deepEqual(generatedRegExp.pattern, "789$");
     });
 
     test("test regular expressions - pattern and flags", () => {
@@ -787,8 +787,8 @@ suite("scrapbook parsing Tests", () => {
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
         const generatedRegExp = (<any>nonNullProp(command, 'argumentObjects')[0]).sku;
-        assert.deepEqual(generatedRegExp.flags, "i");
-        assert.deepEqual(generatedRegExp.source, "789$");
+        assert.deepEqual(generatedRegExp.options, "i");
+        assert.deepEqual(generatedRegExp.pattern, "789$");
     });
 
     test("test regular expressions - Intellisense - flag contains invalid option", () => {
@@ -815,72 +815,70 @@ suite("scrapbook parsing Tests", () => {
     //Passing the following test should imply the rest of the tests pass too.
     // The regex parsing tests following this test should help zero-in on which case isn't handled properly.
     test("test regular expression parsing - with many special cases", () => {
-        const text = `db.test1.beep.find({ sku:  /^(hello?= world).*[^0-9]+|(world\\b\\*){0,2}$/g })`;
+        const text = `db.test1.beep.find({ sku:  /^(hello?= world).*[^0-9]+|(world\\b\\*){0,2}$/ })`;
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
         const generatedRegExp = (<any>nonNullProp(command, 'argumentObjects')[0]).sku;
-        assert.deepEqual(generatedRegExp.flags, "g");
-        assert.deepEqual(generatedRegExp.source, "^(hello?= world).*[^0-9]+|(world\\b\\*){0,2}$");
+        assert.deepEqual(generatedRegExp.pattern, "^(hello?= world).*[^0-9]+|(world\\b\\*){0,2}$");
     });
 
     test("test regular expression parsing EJSON syntax - with many special cases", () => {
-        const text = `db.test1.beep.find({ sku:  {$regex: "^(hello?= world).*[^0-9]+|(world\\\\b\\\\*){0,2}$", $options: "g"} })`;
+        const text = `db.test1.beep.find({ sku:  {$regex: "^(hello?= world).*[^0-9]+|(world\\\\b\\\\*){0,2}$"} })`;
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
         const generatedRegExp = (<any>nonNullProp(command, 'argumentObjects')[0]).sku;
-        assert.deepEqual(generatedRegExp.flags, "g");
-        assert.deepEqual(generatedRegExp.source, "^(hello?= world).*[^0-9]+|(world\\b\\*){0,2}$");
+        assert.deepEqual(generatedRegExp.pattern, "^(hello?= world).*[^0-9]+|(world\\b\\*){0,2}$");
     });
 
     test("test regular expression parsing interoperability", () => {
-        const text1 = `db.test1.beep.find({ sku:  /^(hello?= world).*[^0-9]+|(world\\b\\*){0,2}$/g })`;
+        const text1 = `db.test1.beep.find({ sku:  /^(hello?= world).*[^0-9]+|(world\\b\\*){0,2}$/ })`;
         const commands1: MongoCommand[] = getAllCommandsFromText(text1);
         const command1: MongoCommand = findCommandAtPosition(commands1, new Position(0, 0));
         const generatedRegExp1 = (<any>nonNullProp(command1, 'argumentObjects')[0]).sku;
-        const text2 = `db.test1.beep.find({ sku:  {$regex: "^(hello?= world).*[^0-9]+|(world\\\\b\\\\*){0,2}$", $options: "g"} })`;
+        const text2 = `db.test1.beep.find({ sku:  {$regex: "^(hello?= world).*[^0-9]+|(world\\\\b\\\\*){0,2}$", options: "g"} })`;
         const commands2: MongoCommand[] = getAllCommandsFromText(text2);
         const command2: MongoCommand = findCommandAtPosition(commands2, new Position(0, 0));
         const generatedRegExp2 = (<any>nonNullProp(command2, 'argumentObjects')[0]).sku;
-        assert.deepEqual([generatedRegExp1.flags, generatedRegExp1.source], ["g", "^(hello?= world).*[^0-9]+|(world\\b\\*){0,2}$"]);
-        assert.deepEqual([generatedRegExp2.flags, generatedRegExp2.source], ["g", "^(hello?= world).*[^0-9]+|(world\\b\\*){0,2}$"]);
+        assert.deepEqual(generatedRegExp1.pattern, "^(hello?= world).*[^0-9]+|(world\\b\\*){0,2}$");
+        assert.deepEqual(generatedRegExp2.pattern, "^(hello?= world).*[^0-9]+|(world\\b\\*){0,2}$");
     });
 
     test("test regular expression parsing interoperability - word break", () => {
-        const text1 = `db.test1.beep.find({ sku:  /ker\\b/g })`; // equivalent to user typing out /ker\b/
+        const text1 = `db.test1.beep.find({ sku:  /ker\\b/ })`; // equivalent to user typing out /ker\b/
         const commands1: MongoCommand[] = getAllCommandsFromText(text1);
         const command1: MongoCommand = findCommandAtPosition(commands1, new Position(0, 0));
         const generatedRegExp1 = (<any>nonNullProp(command1, 'argumentObjects')[0]).sku;
-        const text2 = `db.test1.beep.find({ sku:  {$regex: "ker\\\\b", $options: "g"} })`;
+        const text2 = `db.test1.beep.find({ sku:  {$regex: "ker\\\\b"} })`;
         const commands2: MongoCommand[] = getAllCommandsFromText(text2);
         const command2: MongoCommand = findCommandAtPosition(commands2, new Position(0, 0));
         const generatedRegExp2 = (<any>nonNullProp(command2, 'argumentObjects')[0]).sku;
-        assert.deepEqual([generatedRegExp1.flags, generatedRegExp1.source], ["g", "ker\\b"]);
-        assert.deepEqual([generatedRegExp2.flags, generatedRegExp2.source], ["g", "ker\\b"]);
+        assert.deepEqual(generatedRegExp1.pattern, "ker\\b");
+        assert.deepEqual(generatedRegExp2.pattern, "ker\\b");
     });
 
     test("test regular expression parsing interoperability - newline", () => {
-        const text1 = `db.test1.beep.find({ sku:  /ker\\n/g })`; // equivalent to user typing out /ker\n/
+        const text1 = `db.test1.beep.find({ sku:  /ker\\n/ })`; // equivalent to user typing out /ker\n/
         const commands1: MongoCommand[] = getAllCommandsFromText(text1);
         const command1: MongoCommand = findCommandAtPosition(commands1, new Position(0, 0));
         const generatedRegExp1 = (<any>nonNullProp(command1, 'argumentObjects')[0]).sku;
-        const text2 = `db.test1.beep.find({ sku:  {$regex: "ker\\\\n", $options: "g"} })`;
+        const text2 = `db.test1.beep.find({ sku:  {$regex: "ker\\\\n"} })`;
         const commands2: MongoCommand[] = getAllCommandsFromText(text2);
         const command2: MongoCommand = findCommandAtPosition(commands2, new Position(0, 0));
         const generatedRegExp2 = (<any>nonNullProp(command2, 'argumentObjects')[0]).sku;
-        assert.deepEqual([generatedRegExp2.flags, generatedRegExp2.source], ["g", "ker\\n"]);
-        assert.deepEqual([generatedRegExp1.flags, generatedRegExp1.source], ["g", "ker\\n"]);
+        assert.deepEqual(generatedRegExp2.pattern, "ker\\n");
+        assert.deepEqual(generatedRegExp1.pattern, "ker\\n");
     });
     test("test regular expression parsing interoperability - carriage return", () => {
-        const text1 = `db.test1.beep.find({ sku:  /ker\\r/g })`; // equivalent to user typing out /ker\r/
+        const text1 = `db.test1.beep.find({ sku:  /ker\\r/ })`; // equivalent to user typing out /ker\r/
         const commands1: MongoCommand[] = getAllCommandsFromText(text1);
         const command1: MongoCommand = findCommandAtPosition(commands1, new Position(0, 0));
         const generatedRegExp1 = (<any>nonNullProp(command1, 'argumentObjects')[0]).sku;
-        const text2 = `db.test1.beep.find({ sku:  {$regex: "ker\\\\r", $options: "g"} })`;
+        const text2 = `db.test1.beep.find({ sku:  {$regex: "ker\\\\r"} })`;
         const commands2: MongoCommand[] = getAllCommandsFromText(text2);
         const command2: MongoCommand = findCommandAtPosition(commands2, new Position(0, 0));
         const generatedRegExp2 = (<any>nonNullProp(command2, 'argumentObjects')[0]).sku;
-        assert.deepEqual([generatedRegExp1.flags, generatedRegExp1.source], ["g", "ker\\r"]);
-        assert.deepEqual([generatedRegExp2.flags, generatedRegExp2.source], ["g", "ker\\r"]);
+        assert.deepEqual(generatedRegExp1.pattern, "ker\\r");
+        assert.deepEqual(generatedRegExp2.pattern, "ker\\r");
     });
 
     test("test regular expressions - only pattern, no flags", () => {
@@ -888,8 +886,8 @@ suite("scrapbook parsing Tests", () => {
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
         const generatedRegExp = (<any>nonNullProp(command, 'argumentObjects')[0]).sku;
-        assert.deepEqual(generatedRegExp.flags, "");
-        assert.deepEqual(generatedRegExp.source, "789$");
+        assert.deepEqual(generatedRegExp.options, "");
+        assert.deepEqual(generatedRegExp.pattern, "789$");
     });
 
     test("test regular expressions - pattern and flags", () => {
@@ -897,70 +895,64 @@ suite("scrapbook parsing Tests", () => {
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
         const generatedRegExp = (<any>nonNullProp(command, 'argumentObjects')[0]).sku;
-        assert.deepEqual(generatedRegExp.flags, "i");
-        assert.deepEqual(generatedRegExp.source, "789$");
+        assert.deepEqual(generatedRegExp.options, "i");
+        assert.deepEqual(generatedRegExp.pattern, "789$");
     });
 
     test("test regular expressions - Intellisense - flag contains invalid option", () => {
         const text = `db.test1.beep.find({ sku: { $regex: "789$", $options:"q" } })`;
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
-        assert.deepEqual(nonNullProp(command, 'errors')[0].message, "Invalid flags supplied to RegExp constructor 'q'");
+        assert.deepEqual(nonNullProp(command, 'errors')[0].message, "The regular expression option [q] is not supported");
         assert.deepEqual(nonNullProp(command, 'errors')[0].range.start.character, 19);
     });
 
     test("test regular expression parsing - with groupings", () => {
-        const text = `db.test1.beep.find({ sku:  /(?:hello)\\3/g })`;
+        const text = `db.test1.beep.find({ sku:  /(?:hello)\\3/ })`;
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
         const generatedRegExp = (<any>nonNullProp(command, 'argumentObjects')[0]).sku;
-        assert.deepEqual(generatedRegExp.flags, "g");
-        assert.deepEqual(generatedRegExp.source, "(?:hello)\\3");
+        assert.deepEqual(generatedRegExp.pattern, "(?:hello)\\3");
     });
 
     test("test regular expression parsing - with special characters", () => {
-        const text = `db.test1.beep.find({ sku: /(hello)*(world)?(name)+./g })`;
+        const text = `db.test1.beep.find({ sku: /(hello)*(world)?(name)+./ })`;
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
         const generatedRegExp = (<any>nonNullProp(command, 'argumentObjects')[0]).sku;
-        assert.deepEqual(generatedRegExp.flags, "g");
-        assert.deepEqual(generatedRegExp.source, "(hello)*(world)?(name)+.");
+        assert.deepEqual(generatedRegExp.pattern, "(hello)*(world)?(name)+.");
     });
 
     test("test regular expression parsing - with boundaries", () => {
-        const text = `db.test1.beep.find({ sku: /^(hello world)[^0-9]|(world\\b)$/g })`;
+        const text = `db.test1.beep.find({ sku: /^(hello world)[^0-9]|(world\\b)$/ })`;
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
         const generatedRegExp = (<any>nonNullProp(command, 'argumentObjects')[0]).sku;
-        assert.deepEqual(generatedRegExp.flags, "g");
-        assert.deepEqual(generatedRegExp.source, "^(hello world)[^0-9]|(world\\b)$");
+        assert.deepEqual(generatedRegExp.pattern, "^(hello world)[^0-9]|(world\\b)$");
     });
 
     test("test regular expression parsing - with quantifiers", () => {
-        const text = `db.test1.beep.find({ sku: /(hello)*[^0-9]+|(world){0,2}./g })`;
+        const text = `db.test1.beep.find({ sku: /(hello)*[^0-9]+|(world){0,2}./ })`;
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
         const generatedRegExp = (<any>nonNullProp(command, 'argumentObjects')[0]).sku;
-        assert.deepEqual(generatedRegExp.flags, "g");
-        assert.deepEqual(generatedRegExp.source, "(hello)*[^0-9]+|(world){0,2}.");
+        assert.deepEqual(generatedRegExp.pattern, "(hello)*[^0-9]+|(world){0,2}.");
     });
 
     test("test regular expression parsing - with conditional", () => {
-        const text = `db.test1.beep.find({ sku:  /(hello?= world)|(world)/g })`;
+        const text = `db.test1.beep.find({ sku:  /(hello?= world)|(world)/ })`;
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
         const generatedRegExp = (<any>nonNullProp(command, 'argumentObjects')[0]).sku;
-        assert.deepEqual(generatedRegExp.flags, "g");
-        assert.deepEqual(generatedRegExp.source, "(hello?= world)|(world)");
+        assert.deepEqual(generatedRegExp.pattern, "(hello?= world)|(world)");
     });
 
     test("test regular expression parsing - with escaped special characters", () => {
-        const text = `db.test1.beep.find({ sku:  /world\\*\\.\\?\\+/g })`;
+        const text = `db.test1.beep.find({ sku:  /world\\*\\.\\?\\+/ })`;
         const commands: MongoCommand[] = getAllCommandsFromText(text);
         const command: MongoCommand = findCommandAtPosition(commands, new Position(0, 0));
         const generatedRegExp = (<any>nonNullProp(command, 'argumentObjects')[0]).sku;
-        assert.deepEqual(generatedRegExp.flags, "g");
-        assert.deepEqual(generatedRegExp.source, "world\\*\\.\\?\\+");
+        assert.deepEqual(generatedRegExp.pattern, "world\\*\\.\\?\\+");
     });
 
     test("test chained command: argument aggregation", () => {

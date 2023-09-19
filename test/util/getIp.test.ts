@@ -8,11 +8,16 @@ import * as assert from 'assert';
 import { isIPv4 } from 'net';
 import { getPublicIpv4, isIpInRanges } from '../../extension.bundle';
 
-suite("getPublicIpv4", () => {
+suite("getPublicIpv4", function () {
+    this.timeout(30 * 1000);
     test("get IP", async () => {
-        const context = await createTestActionContext();
-        const ip = await getPublicIpv4(context);
-        assert(isIPv4(ip));
+        try {
+            const context = await createTestActionContext();
+            const ip = await getPublicIpv4(context);
+            assert(isIPv4(ip), "Result is not IPv4 address");
+        } catch (error) {
+            assert(false, error.message ?? "Unknown error");
+        }
     });
 });
 
