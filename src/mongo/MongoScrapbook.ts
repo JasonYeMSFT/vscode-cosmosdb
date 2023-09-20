@@ -263,7 +263,7 @@ class FindMongoCommandsVisitor extends MongoVisitor<MongoCommand[]> {
                     const argText = EJSON.stringify(argAsObject);
                     nonNullProp(lastCommand, 'arguments').push(argText);
                     const escapeHandled = this.deduplicateEscapesForRegex(argText);
-                    let ejsonParsed = {};
+                    let ejsonParsed: EJSON.SerializableTypes = {};
                     try {
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
                         ejsonParsed = EJSON.parse(escapeHandled);
@@ -271,7 +271,7 @@ class FindMongoCommandsVisitor extends MongoVisitor<MongoCommand[]> {
                         const parsedError: IParsedError = parseError(error);
                         this.addErrorToCommand(parsedError.message, ctx);
                     }
-                    nonNullProp(lastCommand, 'argumentObjects').push(ejsonParsed);
+                    nonNullProp(lastCommand, 'argumentObjects').push(ejsonParsed as any);
                 }
             }
         } catch (error) {

@@ -4,8 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { appendExtensionUserAgent, IParsedError, parseError } from "@microsoft/vscode-azext-utils";
-import { MongoClient } from "mongodb";
-import { testDb } from "../constants";
+import { MongoClient, MongoOptions } from "mongodb";
 import { ParsedConnectionString } from "../ParsedConnectionString";
 import { nonNullValue } from "../utils/nonNull";
 import { connectToMongoClient } from "./connectToMongoClient";
@@ -61,19 +60,19 @@ export async function parseMongoConnectionString(connectionString: string): Prom
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const serverConfig: any = mongoClient.db(testDb).serverConfig;
-
-    // get the first connection string from the servers list
-    // this may not be best solution, but the connection (below) gives
-    // host name of single server, mongos instance or the primany from replicaSet which is different than what is in the connection string (espcially for Replica sets)
-    // "s" is not part of the static definition but can't find any official documentation on it. Yet it is definitely there at runtime. Grandfathering in.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const host: string = serverConfig?.s?.options?.servers[0]?.host || serverConfig.host;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const port: string = serverConfig?.s?.options?.servers[0]?.port || serverConfig.port;
-
-    return new ParsedMongoConnectionString(connectionString, host, port, getDatabaseNameFromConnectionString(connectionString));
+    const clientOptions: MongoOptions = mongoClient.options;
+    const hosts = clientOptions?.hosts;
+    if (!!hosts && hosts.length > 0) {
+        const host: string | undefined = hosts[0].host;
+        const port: string | undefined = hosts[0].port?.toString();
+        if (host !== undefined && port !== undefined) {
+            return new ParsedMongoConnectionString(connectionString, host, port, getDatabaseNameFromConnectionString(connectionString));
+        } else {
+            throw new Error("Host missing hostname or port in connection string");
+        }
+    } else {
+        throw new Error("No host in connection string");
+    }
 }
 
 export class ParsedMongoConnectionString extends ParsedConnectionString {
