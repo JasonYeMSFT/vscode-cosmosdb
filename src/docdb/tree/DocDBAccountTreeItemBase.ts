@@ -51,7 +51,7 @@ export abstract class DocDBAccountTreeItemBase extends DocDBTreeItemBase<Databas
 
     public get connectionString(): string {
         const firstKey = this.root.credentials.filter((cred): cred is CosmosDBKeyCredential => cred.type === "key")[0];
-        if (!!firstKey) {
+        if (firstKey) {
             return `AccountEndpoint=${this.root.endpoint};AccountKey=${firstKey}`;
         } else {
             return `AccountEndpoint=${this.root.endpoint}`;

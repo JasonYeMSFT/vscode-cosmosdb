@@ -59,7 +59,7 @@ export class DatabaseAccountTreeItemInternal implements DatabaseAccountTreeItem 
     public get docDBData(): { masterKey: string; documentEndpoint: string; } | undefined {
         if (this._accountNode instanceof DocDBAccountTreeItemBase) {
             const keyCred = this._accountNode.root.credentials.filter((cred): cred is CosmosDBKeyCredential => cred.type === 'key')[0];
-            if (!!keyCred) {
+            if (keyCred) {
                 return {
                     documentEndpoint: this._accountNode.root.endpoint,
                     masterKey: keyCred.key

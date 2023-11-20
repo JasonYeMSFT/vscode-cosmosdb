@@ -123,6 +123,10 @@ export class DocDBDocumentTreeItem extends AzExtTreeItem implements IEditableTre
                 return '';
             }
         }
+
+        if (typeof value !== "string" && typeof value !== "number" && typeof value !== "undefined") {
+            throw new Error("Invalid data type for partition key");
+        }
         return value;
     }
 

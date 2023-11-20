@@ -30,7 +30,7 @@ export function getCosmosClient(
 
     const keyCred = cosmosDBCredentials.filter((cred): cred is CosmosDBKeyCredential => cred.type === "key")[0];
     const authCred = cosmosDBCredentials.filter((cred): cred is CosmosDBAuthCredential => cred.type === "auth")[0];
-    if (!!keyCred) {
+    if (keyCred) {
         return new CosmosClient({
             endpoint,
             key: keyCred.key,
@@ -38,7 +38,7 @@ export function getCosmosClient(
             agent: new https.Agent({ rejectUnauthorized: isEmulator ? !isEmulator : vscodeStrictSSL }),
             connectionPolicy: connectionPolicy
         });
-    } else if (!!authCred) {
+    } else if (authCred) {
         return new CosmosClient({
             endpoint,
             aadCredentials: new AzureCliCredential(),
