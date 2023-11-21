@@ -140,11 +140,15 @@ export class SubscriptionTreeItem extends SubscriptionTreeItemBase {
             } catch (error) {
                 // If the client failed to list keys, proceed without using keys.
             }
-            const keyCred = keyResult?.primaryMasterKey ? {
+            let keyCred = keyResult?.primaryMasterKey ? {
                 type: "key",
                 key: keyResult.primaryMasterKey
             } : undefined;
-            const azureCliPath = vscode.workspace.getConfiguration().get<string>('azureFunctions.azureCliPath');
+            const testCosmosAuth = vscode.workspace.getConfiguration().get<boolean>("azureDatabases.testCosmosAuth");
+            if (testCosmosAuth) {
+                keyCred = undefined;
+            }
+            const azureCliPath = vscode.workspace.getConfiguration().get<string>("azureDatabases.azureCliPath");
             const authCred = azureCliPath !== "" ? { type: "auth" } : undefined;
             const credentials = [keyCred, authCred].filter((cred): cred is CosmosDBCredential => cred !== undefined);
             switch (experience && experience.api) {
