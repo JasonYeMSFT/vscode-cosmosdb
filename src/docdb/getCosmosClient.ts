@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { CosmosClient } from "@azure/cosmos";
-import { AzureCliCredential } from "@azure/identity";
+import { AzureDeveloperCliCredential } from "@azure/identity";
 import { appendExtensionUserAgent } from "@microsoft/vscode-azext-utils";
 import * as https from "https";
 import * as vscode from 'vscode';
@@ -41,7 +41,7 @@ export function getCosmosClient(
     } else if (authCred) {
         return new CosmosClient({
             endpoint,
-            aadCredentials: new AzureCliCredential(),
+            aadCredentials: new AzureDeveloperCliCredential(),
             userAgentSuffix: appendExtensionUserAgent(),
             agent: new https.Agent({ rejectUnauthorized: isEmulator ? !isEmulator : vscodeStrictSSL }),
             connectionPolicy: connectionPolicy

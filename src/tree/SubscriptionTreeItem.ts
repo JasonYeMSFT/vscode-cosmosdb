@@ -148,8 +148,7 @@ export class SubscriptionTreeItem extends SubscriptionTreeItemBase {
             if (testCosmosAuth) {
                 keyCred = undefined;
             }
-            const azureCliPath = vscode.workspace.getConfiguration().get<string>("azureDatabases.azureCliPath");
-            const authCred = azureCliPath !== "" ? { type: "auth" } : undefined;
+            const authCred = { type: "auth" };
             const credentials = [keyCred, authCred].filter((cred): cred is CosmosDBCredential => cred !== undefined);
             switch (experience && experience.api) {
                 case "Table":

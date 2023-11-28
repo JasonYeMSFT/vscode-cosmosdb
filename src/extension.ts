@@ -50,13 +50,6 @@ export async function activateInternal(context: vscode.ExtensionContext, perfSta
     registerUIExtensionVariables(ext);
     registerAzureUtilsExtensionVariables(ext);
 
-    const azureCliPath = vscode.workspace.getConfiguration().get<string>(ext.settingsKeys.azureCliPath) ?? "";
-    if (platform() === "win32") {
-        process.env.PATH += `;${azureCliPath}`;
-    } else {
-        process.env.PATH += `:${azureCliPath}`;
-    }
-
     await callWithTelemetryAndErrorHandling('cosmosDB.activate', async (activateContext: IActionContext) => {
         activateContext.telemetry.properties.isActivationEvent = 'true';
         activateContext.telemetry.measurements.mainFileLoad = (perfStats.loadEndTime - perfStats.loadStartTime) / 1000;

@@ -1028,11 +1028,6 @@
                     "default": 8081,
                     "description": "Port to use when connecting to a CosmosDB Emulator instance"
                 },
-                "azureDatabases.azureCliPath": {
-                    "type": "string",
-                    "description": "Path to the directory where Azure CLI is installed. The extension needs to be restarted after changing this setting.",
-                    "default": ""
-                },
                 "azureDatabases.testCosmosAuth": {
                     "type": "boolean",
                     "description": "Whether to force extension to only use Auth credential for Cosmos DB resources",
