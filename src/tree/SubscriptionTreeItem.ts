@@ -9,7 +9,7 @@ import { ILocationWizardContext, LocationListStep, ResourceGroupListStep, Subscr
 import { AzExtParentTreeItem, AzExtTreeItem, AzureWizard, AzureWizardPromptStep, IActionContext } from '@microsoft/vscode-azext-utils';
 import * as vscode from 'vscode';
 import { API, Experience, getExperienceLabel, tryGetExperience } from '../AzureDBExperiences';
-import { CosmosDBCredential } from '../docdb/getCosmosClient';
+import { CosmosDBAuthCredential, CosmosDBCredential } from '../docdb/getCosmosClient';
 import { DocDBAccountTreeItem } from "../docdb/tree/DocDBAccountTreeItem";
 import { ext } from '../extensionVariables';
 import { tryGetGremlinEndpointFromAzure } from '../graph/gremlinEndpoints';
@@ -148,7 +148,15 @@ export class SubscriptionTreeItem extends SubscriptionTreeItemBase {
             if (testCosmosAuth) {
                 keyCred = undefined;
             }
-            const authCred = { type: "auth" };
+
+            let authCred: CosmosDBAuthCredential | undefined;
+            try {
+                const subscription = parent.subscription;
+                authCred = { type: "auth", subscription: subscription };
+            } catch (error) {
+                // We are already in the SubscriptionTreeItem so this should never happen
+                // Handle it just in case
+            }
             const credentials = [keyCred, authCred].filter((cred): cred is CosmosDBCredential => cred !== undefined);
             switch (experience && experience.api) {
                 case "Table":

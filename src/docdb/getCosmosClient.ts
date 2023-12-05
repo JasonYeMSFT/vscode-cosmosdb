@@ -4,8 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { CosmosClient } from "@azure/cosmos";
-import { AzureDeveloperCliCredential } from "@azure/identity";
-import { appendExtensionUserAgent } from "@microsoft/vscode-azext-utils";
+import { ISubscriptionContext, appendExtensionUserAgent } from "@microsoft/vscode-azext-utils";
 import * as https from "https";
 import * as vscode from 'vscode';
 import { ext } from "../extensionVariables";
@@ -16,6 +15,7 @@ export type CosmosDBKeyCredential = {
 };
 export type CosmosDBAuthCredential = {
     type: "auth";
+    subscription: ISubscriptionContext
 }
 export type CosmosDBCredential = CosmosDBKeyCredential | CosmosDBAuthCredential;
 
@@ -41,7 +41,12 @@ export function getCosmosClient(
     } else if (authCred) {
         return new CosmosClient({
             endpoint,
-            aadCredentials: new AzureDeveloperCliCredential(),
+            tokenProvider: async () => {
+                // This is blocked because the auth package ignores the scope we pass in and always acquire tokens for audience "https://management.azure.com"
+                // It needs to be fixed in the auth package for retesting
+                const result = await authCred.subscription.credentials.getToken("https://jasonsql.documents.azure.com/.default");
+                return result?.token;
+            },
             userAgentSuffix: appendExtensionUserAgent(),
             agent: new https.Agent({ rejectUnauthorized: isEmulator ? !isEmulator : vscodeStrictSSL }),
             connectionPolicy: connectionPolicy

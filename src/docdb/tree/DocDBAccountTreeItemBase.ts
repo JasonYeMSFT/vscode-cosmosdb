@@ -23,7 +23,6 @@ export abstract class DocDBAccountTreeItemBase extends DocDBTreeItemBase<Databas
     public readonly label: string;
     public readonly childTypeLabel: string = "Database";
 
-
     constructor(
         parent: AzExtParentTreeItem,
         id: string,
