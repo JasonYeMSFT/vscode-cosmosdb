@@ -45,7 +45,7 @@ export function getCosmosClient(
                 // This is blocked because the auth package ignores the scope we pass in and always acquire tokens for audience "https://management.azure.com"
                 // It needs to be fixed in the auth package for retesting
                 const result = await authCred.subscription.credentials.getToken("https://jasonsql.documents.azure.com/.default");
-                return result?.token;
+                return `type=aad&ver=1.0&sig=${result?.token}`;
             },
             userAgentSuffix: appendExtensionUserAgent(),
             agent: new https.Agent({ rejectUnauthorized: isEmulator ? !isEmulator : vscodeStrictSSL }),
