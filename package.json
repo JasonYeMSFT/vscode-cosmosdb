@@ -1125,7 +1125,7 @@
         "@azure/arm-cosmosdb": "^15.0.0",
         "@azure/arm-postgresql": "^6.0.0",
         "@azure/arm-postgresql-flexible": "^5.0.0",
-        "@azure/cosmos": "^3.6.3",
+        "@azure/cosmos": "^4.0.0",
         "@microsoft/vscode-azext-azureutils": "^2.0.2",
         "@microsoft/vscode-azext-utils": "^2.1.0",
         "antlr4ts": "^0.4.1-alpha.0",
